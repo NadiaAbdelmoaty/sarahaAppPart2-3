@@ -1,116 +1,106 @@
-import { providerEnum } from "../../../common/emun/user.enum.js";
-import { successResponce } from "../../../common/utlits/response.success.js";
+import { providerEnum } from "../../common/emun/user.enum.js";
+import { successResponce } from "../../common/utlits/response.success.js";
 import {
   decrypt,
   encrypt,
-} from "../../../common/utlits/security/encrypt.security.js";
+} from "../../common/utlits/security/encrypt.security.js";
 import {
   compare,
   hash,
-} from "../../../common/utlits/security/hash.security.js";
+} from "../../common/utlits/security/hash.security.js";
 import {
   GenerateToken,
   verifyToken,
-} from "../../../common/utlits/security/token.service.js";
-import * as db_service from "../../db.service.js";
-import userModel from "../../models/userModel/userModel.js";
+} from "../../common/utlits/security/token.service.js";
+// import * as db_service from "../../db.service.js";
+import * as db_service from "../../DB/db.service.js";
+
+// import userModel from "../../models/userModel/userModel.js";
+import userModel from "../../DB/models/userModel/userModel.js";
+
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import { OAuth2Client } from "google-auth-library";
 import joi from "joi";
-import revoketoken from "../../models/userModel/revoketoken.js";
+// import revoketoken from "../../models/userModel/revoketoken.js";
+import revoketoken from "../../DB/models/userModel/revoketoken.js";
+
 import { model } from "mongoose";
 import {
   PREFIX,
   REFRESH_SECRET_KEY,
   SALT_ROUNDS,
   SECRET_KEY,
-} from "../../../../config/config.service.js";
+} from /*"../../../../config/config.service.js"*/"../../../config/config.service.js";
 import {
   generateotp,
   sendingEmail,
-} from "../../../common/utlits/email/sendEmail.js";
-import cloudinary from "../../../common/utlits/cloudinary/cloudinary.js";
+} from "../../common/utlits/email/sendEmail.js";
+import cloudinary from /*"../../../common/utlits/cloudinary/cloudinary.js"*/"../../common/utlits/cloudinary/cloudinary.js";
 import { randomUUID } from "crypto";
-import * as redisS from "../../redis/redis.service.js";
-import { eventEmmetter } from "../../../common/utlits/email/email.event.js";
-import { page } from "../../../common/utlits/email/endOtppage.js";
-
-
+import * as redisS from "../../DB/redis/redis.service.js";
+import { eventEmmetter } from "../../common/utlits/email/email.event.js";
+import { page } from "../../common/utlits/email/endOtppage.js";
+import { eventEmailEnum } from "../../common/emun/email.enum.js";
 
 // ------------------sending OTP Global------------------
-const sendEmailOTP = async (email) => {
-  const isblocked = await redisS.ttl(redisS.blocked_otp_key({ email }));
+const sendEmailOTP = async ({ email, subject } = {}) => {
+  const isblocked = await redisS.ttl(
+    redisS.blocked_otp_key({ email, subject }),
+  );
+
   if (isblocked > 0) {
     throw new Error(`you are blocked try again after ${isblocked}`);
   }
 
-  // if(isblocked==-2){
-  //      await redisS.deleteKey(redisS.max_otp_key({email}))
-
-  // }
-  const timelifeForOTP = await redisS.ttl(redisS.otp_key({ email }));
+  const timelifeForOTP = await redisS.ttl(redisS.otp_key({ email, subject }));
   if (timelifeForOTP > 0) {
     throw new Error(`your otp still valid`);
   }
 
-  const maxTries = await redisS.get(redisS.max_otp_key({ email }));
+  const maxTries = await redisS.get(redisS.max_otp_key({ email, subject }));
   if (maxTries >= 3) {
+    const ay = await redisS.deleteKey(redisS.max_otp_key({ email, subject }));
+
     await redisS.setvalue({
-      key: redisS.blocked_otp_key({ email }),
+      key: redisS.blocked_otp_key({ email, subject }),
       value: 1,
       ttl: 2 * 60,
     });
+
     throw new Error(`your are blocked now try again later `);
   }
   eventEmmetter.emit(eventEmailEnum.confirmeEmail, async () => {
     const OTP = await generateotp();
     await sendingEmail({
       to: email,
-      subject: `verify your email `,
+      subject: subject || `verify your email `,
       html: page(OTP),
     });
 
     await redisS.setvalue({
-      key: redisS.otp_key({ email }),
+      key: redisS.otp_key({ email, subject }),
       value: hash({ plainText: `${OTP}` }),
-      ttl: 60 * 60,
+      ttl: 60 * 2,
     });
-    await redisS.incr(redisS.max_otp_key({ email }));
-    await redisS.deleteKey(redisS.otp_key({ email }));
   });
 };
+
 // -------------- signUp --------------------------------------------
 export const signUp = async (req, res, next) => {
   const { userName, email, password, gender, age, phone, confirmed, provider } =
     req.body;
 
-  // console.log('before',req.file);
-
   if (await db_service.findOne({ model: userModel, filter: { email } })) {
     throw new Error("email alredy exists exists");
   }
-
-  // //for array and filds multer
-  // let paths = []
-  // if(req.files.attachments){
-  //   for(let file of req.files.attachments){
-  //     paths.push(file.path)
-  //   }
-  // }
 
   const { secure_url, public_id } = await cloudinary.uploader.upload(
     req.file.path,
     {
       folder: "nadia/user",
-      /// options
-      // public_id:"nn",
-      // use_filename:true,
-      // unique_filename:false,
-      // resource_type:"auto"
     },
   );
-  // *********cloudinary upload
 
   const [firstName, ...lastNameParts] = userName.split(" ");
   const lastName = lastNameParts.length ? lastNameParts.join(" ") : firstName;
@@ -127,12 +117,10 @@ export const signUp = async (req, res, next) => {
       phone: encrypt(phone),
       confirmed,
       provider,
-      // coverPicture:paths,
       credential: new Date(),
       profilePicture: { secure_url, public_id },
     },
   });
-  // console.log('after',req.file);
 
   // ----------------------otp generating------------------
   eventEmmetter.emit(eventEmailEnum.confirmeEmail, async () => {
@@ -143,9 +131,8 @@ export const signUp = async (req, res, next) => {
       html: page(OTP),
     });
 
-    // console.log("hi redies")
     await redisS.setvalue({
-      key: redisS.otp_key({ email }),
+      key: redisS.otp_key({ email, subject: eventEmailEnum.confirmeEmail }),
       value: hash({ plainText: `${OTP}` }),
       ttl: 60,
     });
@@ -159,10 +146,13 @@ export const signUp = async (req, res, next) => {
 
   successResponce({ res, status: 201, data: user });
 };
+
 // ------------------------confirmEmail-----------------------
 export const confirmEmail = async (req, res, next) => {
   const { email, OTP } = req.body;
-  const realotp = await redisS.get(redisS.otp_key({ email }));
+  const realotp = await redisS.get(
+    redisS.otp_key({ email, subject: eventEmailEnum.confirmeEmail }),
+  );
   if (!realotp) {
     throw new Error(`otp not valid not found`);
   }
@@ -182,8 +172,6 @@ export const confirmEmail = async (req, res, next) => {
     throw new Error(`user not exists`);
   }
 
-  // ************************* error here says no ttl for this key***********
-
   await redisS.deleteKey(redisS.otp_key({ email }));
   successResponce({
     res,
@@ -193,7 +181,6 @@ export const confirmEmail = async (req, res, next) => {
 };
 
 // -----------------------------------------resendConfirmEmail----------------------------------
-
 export const resendConfirmEmail = async (req, res, next) => {
   const { email } = req.body;
 
@@ -205,11 +192,13 @@ export const resendConfirmEmail = async (req, res, next) => {
       provider: providerEnum.system,
     },
   });
-  // console.log(user)
+
   if (!user) {
     throw new Error(`user not exists`);
   }
-  await sendEmailOTP(email);
+  await sendEmailOTP({ email });
+  await redisS.incr(redisS.max_otp_key({ email }));
+
   successResponce({
     res,
     message: "confirmeddddddddddddddddddddddddd again 😊😊",
@@ -220,7 +209,6 @@ export const resendConfirmEmail = async (req, res, next) => {
 // ----------------------------------------signUpwithemail-----------------------------
 export const signUpwithemail = async (req, res, next) => {
   const { idToken } = req.body;
-  //  console.log(idToken)
 
   const client = new OAuth2Client();
 
@@ -228,8 +216,6 @@ export const signUpwithemail = async (req, res, next) => {
     idToken,
     audience:
       "943822216111-tbilu82gh1bdtikjkej73n20n5jiura1.apps.googleusercontent.com", // Specify the WEB_CLIENT_ID of the app that accesses the backend
-    // Or, if multiple clients access the backend:
-    //[WEB_CLIENT_ID_1, WEB_CLIENT_ID_2, WEB_CLIENT_ID_3]
   });
   const payload = ticket.getPayload();
   const { email, email_verified, name, picture } = payload;
@@ -295,37 +281,27 @@ export const signIn = async (req, res, next) => {
     },
   });
 
-  // const aacess_token =jwt.sign({id:user._id,email:user.email},"nadia",{
-  //    // expiresIn:60    // deadline
-  //    // noTimestamp:true   // createdat
-  //    // issuer:"http://locahost/3000" // who seds this token
-  //    // audience:"http://localhost/4000"  who will receve this token
-  //    // notBefore:60*60     //when will this token work after 1 hour
-  //    // jwtid:uuidv4()   // add a random thing to the token to use it to revocke the token
-  //    // npm uuid
-  // })
   successResponce({ res, data: { access_token, refresh_token } });
 };
+
 // ---------------------------getProfile---------------------------------
 export const getProfile = async (req, res, next) => {
-  // // cashing
-  const key = `profile::${req.myuser._id}`;
-  const userExists = await redisS.get(key);
-  if (userExists) {
-    return successResponce({ res, data: userExists });
-  }
-  const profilevwiews = await redisS.incr({key:`views::${req.myuser._id}`,value:1,ttl:-1})
-  await redisS.setvalue({ key, value: req.myuser, ttl: 60 });
-  // const {id}=req.params
+  const userId = req.myuser._id;
+  const profileKey = `profile::${userId}`;
+  const viewsKey = `views::${userId}`;
 
-  // const decoded = jwt.verify(authorization,"nadia",{
-  //    // ignoreExpiration:true   //to ingnore the expiration time
-  // })
+  const profileViews = await redisS.incr({
+    key: viewsKey,
+    value: 1
+  });
 
-  successResponce({ res, data: req.myuser,message:`yiur views : ${profilevwiews}` });
-  //  successResponce({res,data:{...user._doc,data:user}})
+  successResponce({
+    res,
+    data: req.myuser,
+    message: `your views: ${profileViews}`,
+  });
 };
-
+//-------------------------------share profile -------------------------
 export const shareProfile = async (req, res, next) => {
   const { id } = req.params;
   const user = await db_service.findById({
@@ -340,13 +316,8 @@ export const shareProfile = async (req, res, next) => {
 
   successResponce({ res, data: user });
 };
-// export const hiadmin=()=>{
-// console.log("hi admin")
-// }
-// export const hiuser=()=>{
-// console.log("hi user")
 
-// }
+//-------------------------------refresh token -------------------------
 export const refresh_tokenAPI = async (req, res, next) => {
   const { authorization } = req.headers;
 
@@ -354,7 +325,6 @@ export const refresh_tokenAPI = async (req, res, next) => {
     throw new Error("token not exists");
   }
 
-  //  فى حالة زودنا كلمة سر عالتوكن
   const [prefix, token] = authorization.split(" ");
   if (prefix !== PREFIX) {
     throw new Error("invalid token prefix");
@@ -389,8 +359,8 @@ export const refresh_tokenAPI = async (req, res, next) => {
     },
   });
   successResponce({ res, data: access_token });
-  //  successResponce({res,data:{...user._doc,data:user}})
 };
+
 // -------------------------updateProfile-----------------------------------
 export const updateProfile = async (req, res, next) => {
   let { firstName, lastName, gender, phone } = req.body;
@@ -409,6 +379,7 @@ export const updateProfile = async (req, res, next) => {
   await redisS.deleteKey(`profile::${req.myuser._id}`);
   successResponce({ res, data: user });
 };
+
 //-------------------------------updatePassword-------------------------
 export const updatePassword = async (req, res, next) => {
   const { newPassword, oldPassword } = req.body;
@@ -416,10 +387,74 @@ export const updatePassword = async (req, res, next) => {
     throw new Error("invalid old password", { cause: 404 });
   }
   const hashpass = hash({ plainText: newPassword, salt_rounds: SALT_ROUNDS });
-  await req.myuser.save();
+  req.myuser.password = hashpass;
+  req.myuser.credential = new Date();
 
+  await req.myuser.save();
   successResponce({ res });
 };
+
+//-------------------------------forget Password-------------------------
+export const forgetpassword = async (req, res, next) => {
+  const { email } = req.body;
+  const user = await db_service.findOne({
+    model: userModel,
+
+    filter: {
+      email,
+      provider: providerEnum.system,
+      confirmed: { $exists: true },
+    },
+  });
+  console.log(user);
+
+  if (!user) {
+    throw new Error("email is not exists", { cause: 404 });
+  }
+  await sendEmailOTP({ email, subject: eventEmailEnum.forgetPassword });
+
+  successResponce({ res, message: "sucsess " });
+};
+
+//-------------------------------reset Password-------------------------
+
+export const resetPssword = async (req, res, next) => {
+  const { email, code, newPassword } = req.body;
+  const validOTP = await redisS.get(
+    redisS.otp_key({ email, subject: eventEmailEnum.forgetPassword }),
+  );
+
+  if (!validOTP) {
+    throw new Error("otp expire", { cause: 404 });
+  }
+
+  if (!compare({ plainText: code, cipherText: validOTP })) {
+    throw new Error("otp code not valid");
+  }
+  const user = await db_service.findOneAndUpdate({
+    model: userModel,
+
+    filter: {
+      email,
+      provider: providerEnum.system,
+      confirmed: { $exists: true },
+    },
+    update: {
+      password: hash({ plainText: newPassword }),
+      credential: new Date(),
+    },
+  });
+
+  if (!user) {
+    throw new Error("email is not exists", { cause: 404 });
+  }
+  await redisS.deleteKey(
+    redisS.otp_key({ email, subject: eventEmailEnum.forgetPassword }),
+  );
+
+  successResponce({ res, message: "sucsess updating password " });
+};
+
 // ----------------------------------logOut-------------------------------
 export const logout = async (req, res, next) => {
   const { flag } = req.query;
@@ -429,25 +464,12 @@ export const logout = async (req, res, next) => {
     await redisS.deleteKey(
       await redisS.Keys(redisS.get_key({ userId: req.myuser._id })),
     );
-    // await db_service.deleteMany({model:revoketoken,filter:{userId:req.myuser._id}
-    // })
   } else {
     await redisS.setvalue({
       key: redisS.revoke_key({ userId: req.myuser._id, jti: req.decoded.jti }),
       value: `${req.decoded.jti}`,
       ttl: req.decoded.exp - Math.floor(Date.now() / 1000),
     });
-    // await db_service.create({
-    //   model:revoketoken,
-    //   data:{
-    //     tokenId:req.decoded.jti,
-    //     userId:req.myuser._id,
-    //     expireAt:new Date(req.decoded.exp * 1000),
-    //   }
-
-    // })
   }
   successResponce({ res });
-
-  //  successResponce({res,data:{...user._doc,data:user}})
 };

@@ -69,14 +69,11 @@ const userSchema = mongoose.Schema(
       enum: roleEnum.value,
       default: roleEnum.user,
     },
-    // role:
   },
   {
     timestamps: true,
-    // filter only the data we have in schems if you send any other info it will not be stored in you db
     strictQuery: true,
     toJSON: { virtual: true },
-  
   },
 );
 userSchema

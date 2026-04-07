@@ -1,5 +1,5 @@
-export const page =(OTP)=>{
-    return `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+export const page = (OTP) => {
+  return `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
     <div style="background-color: #4A90E2; padding: 20px; text-align: center;">
         <h1 style="color: white; margin: 0; font-size: 24px;">Saraha App</h1>
     </div>
@@ -24,5 +24,5 @@ export const page =(OTP)=>{
         &copy; 2026 Saraha App. All rights reserved.
     </div>
 </div>
-`
-}
+`;
+};

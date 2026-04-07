@@ -1,3 +1,4 @@
+import { eventEmailEnum } from "../../common/emun/email.enum.js";
 import  { redis_client } from "./redisConnection.js";
 
 
@@ -7,8 +8,8 @@ export const revoke_key=({userId,jti})=>{
 export const get_key=({userId})=>{
     return `revoke_token::${userId}`
 }
-export const otp_key=({email})=>{
-    return `otp::${email}`
+export const otp_key=({email,subject=eventEmailEnum.confirmeEmail})=>{
+    return `otp::${email}::${subject}`
 }
 export const max_otp_key=({email})=>{
     return `max_otp::${email}`
@@ -16,6 +17,7 @@ export const max_otp_key=({email})=>{
 export const blocked_otp_key=({email})=>{
     return `blocked_otp::${email}`
 }
+
 // set
 export const setvalue = async({key,value,ttl})=>{
     try {
@@ -116,14 +118,14 @@ export const Keys = async(key)=>{
 
 
 // incr
-export const incr = async(key)=>{
+
+export const incr = async ({ key, value }) => { // لازم تحط الأقواس دي هنا
     try {
-        
-            return await redis_client.incr(key) 
-
+        if (!key) throw new Error("Redis Key is required");
+        const incrementAmount =value;
+        return await redis_client.incrBy(key, incrementAmount); 
     } catch (error) {
-        console.log(" error incr cash ",error)
-       
+        console.log("error incr cash:", error.message);
+        return 0;
     }
-
-}
+};

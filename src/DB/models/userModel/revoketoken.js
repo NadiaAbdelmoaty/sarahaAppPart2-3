@@ -1,9 +1,4 @@
 import mongoose from "mongoose";
-import {
-  GenderEnum,
-  providerEnum,
-  roleEnum,
-} from "../../../common/emun/user.enum.js";
 
 const revoketokenSchema = mongoose.Schema(
   {
@@ -14,29 +9,25 @@ const revoketokenSchema = mongoose.Schema(
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref:"user",
+      ref: "user",
       required: true,
-
     },
-   expireAt:{
-    type:Date,
+    expireAt: {
+      type: Date,
       required: true,
+    },
 
-   }
-
- 
     // role:
   },
-   {
+  {
     timestamps: true,
     strictQuery: true,
-
   },
- 
 );
 
-revoketokenSchema.index({expireAt:1},{expireAfterSeconds:0})
+revoketokenSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
 
-
-const revoketokenModel = mongoose.model.revoketoken || mongoose.model("revoketoken", revoketokenSchema);
+const revoketokenModel =
+  mongoose.model.revoketoken ||
+  mongoose.model("revoketoken", revoketokenSchema);
 export default revoketokenModel;

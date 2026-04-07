@@ -5,7 +5,6 @@ let envPaths={
     development:".env.development",
     production:".env.production"
 }
-// import x from "../config/.env"
 dotenv.config({path:resolve(`config/${envPaths[NODE_ENV]}`)})
 export const Port = +process.env.PORT
 export const DB_URI = process.env.DB_URI
@@ -16,3 +15,4 @@ export const PREFIX= process.env.PREFIX
 export const REDIS_URL = process.env.REDIS_URL
 export const EMAIL_ADDRESS = process.env.EMAIL_ADDRESS
 export const PASSWORD = process.env.PASSWORD
+export const WHITE_LIST = process.env.WHITE_LIST?.split(",") || []
