@@ -8,7 +8,7 @@ const checkDBConnection=async()=>{
     maxPoolSize: 10,    });
     console.log(`connected to db ${DB_URI}`);
     } catch (error) {
-         console.log("can't connecte to db");
+         console.log("can't connecte to db",error);
     }
 }
 export default checkDBConnection
