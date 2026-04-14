@@ -21,3 +21,8 @@ export const REDIS_URL = process.env.REDIS_URL;
 export const EMAIL_ADDRESS = process.env.EMAIL_ADDRESS;
 export const PASSWORD = process.env.PASSWORD;
 export const WHITE_LIST = process.env.WHITE_LIST?.split(",") || [];
+
+
+export const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME;
+export const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY;
+export const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
