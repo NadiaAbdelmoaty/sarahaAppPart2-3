@@ -1,4 +1,4 @@
-// import dotenv from "dotenv";
+import dotenv from "dotenv";
 import { resolve } from "node:path";
 
 // only load .env files locally — on Vercel, env vars are set in the dashboard

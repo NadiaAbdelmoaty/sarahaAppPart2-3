@@ -1,5 +1,5 @@
-// import multer from "multer";
-// import fs from "node:fs";
+import multer from "multer";
+import fs from "node:fs";
 
 // export const multer_local = ({
 //   myPath = "general",
@@ -42,6 +42,10 @@
 //   const upload = multer({ storage, fileFilter });
 //   return upload;
 // };
+
+
+
+
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { v2 as cloudinary } from "cloudinary";
