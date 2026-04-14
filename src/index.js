@@ -4,6 +4,6 @@ import { sendingEmail } from "./common/utlits/email/sendEmail.js";
 import { resolve } from "node:path";
 const app = express();
 
-await bootstrab(app);
+bootstrab(app);
 
 export default app;

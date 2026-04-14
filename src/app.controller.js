@@ -46,8 +46,10 @@ const bootstrab = async (app) => {
       .status(err.cause || 500)
       .json({ message: err.message, stack: err.stack });
   });
-  app.listen(port, () => {
-    console.log("hi from server");
-  });
+  if (!process.env.VERCEL) {
+    app.listen(port, () => {
+      console.log("hi from server");
+    });
+  }
 };
 export default bootstrab;
