@@ -44,33 +44,46 @@ import fs from "node:fs";
 // };
 
 
-
-
 import multer from "multer";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { v2 as cloudinary } from "cloudinary";
-import { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } from "../../../config/config.service.js";
+import streamifier from "streamifier";
+import {
+  CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET,
+} from "../../../config/config.service.js";
 
-// configure cloudinary
 cloudinary.config({
   cloud_name: CLOUDINARY_CLOUD_NAME,
   api_key: CLOUDINARY_API_KEY,
   api_secret: CLOUDINARY_API_SECRET,
 });
 
-// ✅ replaces multer_local — uploads directly to Cloudinary
+// custom cloudinary storage engine for multer
+const createCloudinaryStorage = (folder) => ({
+  _handleFile(req, file, cb) {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: `uploads/${folder}` },
+      (error, result) => {
+        if (error) return cb(error);
+        cb(null, {
+          path: result.secure_url,   // the Cloudinary URL
+          filename: result.public_id // the Cloudinary public_id
+        });
+      }
+    );
+    streamifier.createReadStream(file.buffer || file.stream).pipe(uploadStream);
+  },
+  _removeFile(req, file, cb) {
+    cloudinary.uploader.destroy(file.filename, cb);
+  },
+});
+
+// ✅ replaces multer_local
 export const multer_local = ({
   myPath = "general",
   custom_types = [],
 } = {}) => {
-  const storage = new CloudinaryStorage({
-    cloudinary,
-    params: {
-      folder: `uploads/${myPath}`, // creates folder in Cloudinary
-      allowed_formats: custom_types.map((type) => type.split("/")[1]), // e.g. "image/jpeg" → "jpeg"
-    },
-  });
-
   function fileFilter(req, file, cb) {
     if (!custom_types.includes(file.mimetype)) {
       cb(new Error("invalid file type"));
@@ -79,18 +92,14 @@ export const multer_local = ({
     }
   }
 
-  return multer({ storage, fileFilter });
+  return multer({
+    storage: createCloudinaryStorage(myPath),
+    fileFilter,
+  });
 };
 
-// ✅ replaces multer_host — uses Cloudinary memory buffer
+// ✅ replaces multer_host
 export const multer_host = (custom_types = []) => {
-  const storage = new CloudinaryStorage({
-    cloudinary,
-    params: {
-      folder: "uploads/host",
-    },
-  });
-
   function fileFilter(req, file, cb) {
     if (!custom_types.includes(file.mimetype)) {
       cb(new Error("invalid file type"));
@@ -99,5 +108,8 @@ export const multer_host = (custom_types = []) => {
     }
   }
 
-  return multer({ storage, fileFilter });
+  return multer({
+    storage: createCloudinaryStorage("host"),
+    fileFilter,
+  });
 };
