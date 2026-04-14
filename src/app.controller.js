@@ -74,12 +74,14 @@ const bootstrab = async (app) => {
 
   app.use(cors(corsOptions), helmet(), express.json());
 
-  // ❌ removed: app.use("/uploads", express.static("uploads")); 
-  // ❌ removed: await connectingRedis();
-  // ❌ removed: redis_client.set(...)
 
   await checkDBConnection();
 
+// check if server is running
+app.get("/", (req, res) => {
+  res.json({ message: "Saraha API is running 🚀", status: "ok" });
+});
+// ---------------
   app.use("/user", userRouter);
   app.use("/message", messageRouter);
 
