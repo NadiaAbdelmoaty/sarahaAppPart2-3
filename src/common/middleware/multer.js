@@ -72,7 +72,7 @@ const createCloudinaryStorage = (folder) => ({
         });
       }
     );
-    streamifier.createReadStream(file.buffer || file.stream).pipe(uploadStream);
+//file.stream.pipe(uploadStream);
   },
   _removeFile(req, file, cb) {
     cloudinary.uploader.destroy(file.filename, cb);

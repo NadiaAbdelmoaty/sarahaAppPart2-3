@@ -61,7 +61,7 @@ import { WHITE_LIST } from "../config/config.service.js";
 import messageRouter from "./module/messageModule/message.controller.js";
 import helmet from "helmet";
 
-const bootstrab = async (app) => {
+const bootstrab = (app) => {
   const corsOptions = {
     origin: function (origin, callback) {
       if ([...WHITE_LIST, undefined].includes(origin)) {
@@ -75,7 +75,7 @@ const bootstrab = async (app) => {
   app.use(cors(corsOptions), helmet(), express.json());
 
 
-  await checkDBConnection();
+  checkDBConnection();
 
 // check if server is running
 app.get("/", (req, res) => {
