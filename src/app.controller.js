@@ -9,10 +9,9 @@ import messageRouter from "./module/messageModule/message.controller.js";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 
-const app = express();
 const port = Port;
 
-const bootstrab = async () => {
+const bootstrab = async (app) => {
   const limiter = rateLimit({
     windowMs: 60 * 5 * 1000,
     limit: 3,
