@@ -194,7 +194,7 @@ export const resendConfirmEmail = async (req, res, next) => {
   });
 
   if (!user) {
-    throw new Error(`user not exists`);
+    throw new Error(`you are not register or already confirmed`);
   }
   await sendEmailOTP({ email });
   await redisS.incr(redisS.max_otp_key({ email }));

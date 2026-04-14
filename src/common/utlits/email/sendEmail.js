@@ -27,5 +27,5 @@ export const sendingEmail = async ({
 };
 
 export const generateotp = async () => {
-  return Math.floor(100000 + Math.random() * 1000000);
+  return Math.floor(100000 + Math.random() * 900000);
 };

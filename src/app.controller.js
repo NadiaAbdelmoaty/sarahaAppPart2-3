@@ -17,7 +17,7 @@ const bootstrab = async (app) => {
     limit: 3,
   });
   const corsOptions = {
-    orinig: function (origin, callback) {
+    origin: function (origin, callback) {
       if ([...WHITE_LIST, undefined].includes(origin)) {
         callback(null, true);
       } else {
@@ -29,11 +29,15 @@ const bootstrab = async (app) => {
   app.use(cors(corsOptions), helmet(), /*limiter,*/ express.json());
 
   app.use("/uploads", express.static("uploads"));
-  checkDBConnection();
-  connectingRedis();
+  await checkDBConnection();
+  await connectingRedis();
   app.use("/user", userRouter);
   app.use("/message", messageRouter);
-  await redis_client.set("name", "nadia");
+  try {
+    await redis_client.set("name", "nadia");
+  } catch (err) {
+    console.error("Redis set error:", err.message);
+  }
   app.use((req, res, next) => {
     throw new Error(`no page with this URL ${req.originalUrl}`, { cause: 404 });
   });
