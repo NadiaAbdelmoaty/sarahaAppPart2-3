@@ -14,10 +14,19 @@ import { multer_enum } from "../../common/emun/multer.enum.js";
 import messageRouter from "../messageModule/message.controller.js";
 const userRouter = Router({ caseSensitive: true, strict: true });
 
+
+userRouter.get("/", (req, res) => {
+  res.json({ message: "Saraha API is running 🚀", status: "ok" });
+});
+
+
 // --------------------- user can get his messages -----------------------------
 userRouter.use("/:userId/messages", messageRouter);
 
 // --------------------- signUp-----------------------------
+
+
+
 userRouter.post(
   "/signUp",
   multer_host(multer_enum.image).single("attachment"),
