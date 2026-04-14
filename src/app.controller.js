@@ -61,7 +61,7 @@ import { WHITE_LIST } from "../config/config.service.js";
 import messageRouter from "./module/messageModule/message.controller.js";
 import helmet from "helmet";
 
-const bootstrab = (app) => {
+const bootstrab = async (app) => {
   const corsOptions = {
     origin: function (origin, callback) {
       if ([...WHITE_LIST, undefined].includes(origin)) {
