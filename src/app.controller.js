@@ -1,3 +1,4 @@
+//// local-------------
 // import express from "express";
 // import checkDBConnection from "./DB/db.connection.js";
 // import userModel from "./DB/models/userModel/userModel.js";
@@ -54,7 +55,7 @@
 // };
 // export default bootstrab;
 
-
+//// server
 
 import express from "express";
 import checkDBConnection from "./DB/db.connection.js";
@@ -79,7 +80,10 @@ const bootstrab = async (app) => {
   app.use(cors(corsOptions), helmet(), express.json());
 
 
-  checkDBConnection();
+  app.use(async (req, res, next) => {
+    await checkDBConnection();
+    next();
+  });
 
 // check if server is running
 app.get("/", (req, res) => {
