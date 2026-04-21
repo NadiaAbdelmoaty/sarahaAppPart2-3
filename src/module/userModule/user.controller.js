@@ -29,7 +29,7 @@ userRouter.use("/:userId/messages", messageRouter);
 
 userRouter.post(
   "/signUp",
-  multer_host(multer_enum.image).single("attachment"),
+  //multer_host(multer_enum.image).single("attachment"),
   validation(UVS.signUpschema),
   US.signUp,
 );
