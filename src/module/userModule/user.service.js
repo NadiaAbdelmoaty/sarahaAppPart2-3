@@ -95,12 +95,12 @@ export const signUp = async (req, res, next) => {
     throw new Error("email alredy exists exists");
   }
 
-  const { secure_url, public_id } = await cloudinary.uploader.upload(
-    req.file.path,
-    {
-      folder: "nadia/user",
-    },
-  );
+  // const { secure_url, public_id } = await cloudinary.uploader.upload(
+  //   req.file.path,
+  //   {
+  //     folder: "nadia/user",
+  //   },
+  // );
 
   const [firstName, ...lastNameParts] = userName.split(" ");
   const lastName = lastNameParts.length ? lastNameParts.join(" ") : firstName;
