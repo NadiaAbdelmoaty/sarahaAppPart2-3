@@ -80,8 +80,10 @@ const bootstrab = async (app) => {
   app.use(cors(corsOptions), helmet(), express.json());
 
 
+  app.use(async (req, res, next) => {
     await checkDBConnection();
-  
+    next();
+  });
 
 // check if server is running
 app.get("/", (req, res) => {
