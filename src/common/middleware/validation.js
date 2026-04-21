@@ -5,13 +5,14 @@ export const validation = (schema) => {
       const { error } = schema[key].validate(req[key], { abortEarly: false });
 
       if (error) {
-        errorResult.push(error.details);
+        errorResult.push(...error.details);
       }
-      if (errorResult.length > 0) {
-        return res
-          .status(400)
-          .json({ message: "validation error", error: errorResult });
-      }
+    }
+
+    if (errorResult.length > 0) {
+      return res
+        .status(400)
+        .json({ message: "validation error", error: errorResult });
     }
 
     next();
