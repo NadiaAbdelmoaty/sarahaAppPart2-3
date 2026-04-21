@@ -7,7 +7,7 @@ export const sendMessageSchema = {
       userId: generaRules.id.required(),
     })
     .required(),
-  files: joi.array().items(generaRules.file),
+  // files: joi.array().items(generaRules.file),
 };
 
 export const getMessageSchema = {
@@ -16,7 +16,7 @@ export const getMessageSchema = {
       messageId: generaRules.id.required(),
     })
     .required(),
-  files: joi.array().items(generaRules.file),
+  // files: joi.array().items(generaRules.file),
 };
 
 export const getAllMessagesSchema = {

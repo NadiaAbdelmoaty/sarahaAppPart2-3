@@ -24,7 +24,7 @@ export const signUpschema = {
     .required(),
 
   // ----------- multer options ---------------
-  file: generaRules.file.required(),
+  // file: generaRules.file.required(),
 };
 
 // ******************** SignIn Schema *************************

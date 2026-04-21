@@ -118,7 +118,7 @@ export const signUp = async (req, res, next) => {
       confirmed,
       provider,
       credential: new Date(),
-      profilePicture: { secure_url, public_id },
+      // profilePicture: { secure_url, public_id },
     },
   });
 
